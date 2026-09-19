@@ -1,15 +1,17 @@
 import React, { useState } from "react";
-import { AnalyticsData, PurchaseRecord, ExecutionRecord, AgentSkill } from "../types";
-import { BarChart3, DollarSign, TrendingUp, Cpu, CreditCard, Activity, ArrowUpRight, ShieldCheck, RefreshCw, Layers } from "lucide-react";
+import { AnalyticsData, PurchaseRecord, ExecutionRecord, AgentSkill, UserSession } from "../types";
+import { BarChart3, DollarSign, TrendingUp, Cpu, CreditCard, Activity, ArrowUpRight, ShieldCheck, RefreshCw, Layers, Key, Building } from "lucide-react";
 
 interface AnalyticsProps {
   data: AnalyticsData;
   skills: AgentSkill[];
+  user?: UserSession;
   onReset: () => void;
   isResetting: boolean;
+  onOpenCredentials?: () => void;
 }
 
-export default function AnalyticsDashboard({ data, skills, onReset, isResetting }: AnalyticsProps) {
+export default function AnalyticsDashboard({ data, skills, user, onReset, isResetting, onOpenCredentials }: AnalyticsProps) {
   const [hoveredPointIdx, setHoveredPointIdx] = useState<number | null>(null);
   const [hoveredBarIdx, setHoveredBarIdx] = useState<number | null>(null);
 
@@ -61,15 +63,15 @@ export default function AnalyticsDashboard({ data, skills, onReset, isResetting 
       {/* Dynamic Key Performance Indicators (KPIs) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI: Total Volume */}
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5 hover:border-blue-500/40 transition-all duration-300 group">
+        <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-5 hover:border-indigo-500/45 transition-all duration-300 group">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs font-mono text-zinc-400 tracking-wider uppercase">Gross Store Revenue</p>
+              <p className="text-xs font-mono text-slate-400 tracking-wider uppercase">Gross Store Revenue</p>
               <h3 className="text-3xl font-bold font-sans text-white mt-1 tracking-tight">
                 ${totalRevenue.toFixed(2)}
               </h3>
             </div>
-            <div className="bg-blue-950/40 text-blue-400 p-2.5 rounded-lg border border-blue-900/40 group-hover:scale-105 transition-transform">
+            <div className="bg-indigo-950/80 text-indigo-400 p-2.5 rounded-lg border border-indigo-900/60 group-hover:scale-105 transition-transform">
               <DollarSign className="h-5 w-5" />
             </div>
           </div>
@@ -80,15 +82,15 @@ export default function AnalyticsDashboard({ data, skills, onReset, isResetting 
         </div>
 
         {/* KPI: License Purchases */}
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5 hover:border-amber-500/45 transition-all duration-300 group">
+        <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-5 hover:border-amber-500/45 transition-all duration-300 group">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs font-mono text-zinc-400 tracking-wider uppercase">Premium Licenses</p>
+              <p className="text-xs font-mono text-slate-400 tracking-wider uppercase">Premium Licenses</p>
               <h3 className="text-3xl font-bold font-sans text-white mt-1 tracking-tight">
                 {totalPurchasesCount}
               </h3>
             </div>
-            <div className="bg-amber-950/45 text-amber-400 p-2.5 rounded-lg border border-amber-900/30 group-hover:scale-105 transition-transform">
+            <div className="bg-amber-950/85 text-amber-400 p-2.5 rounded-lg border border-amber-900/60 group-hover:scale-105 transition-transform">
               <CreditCard className="h-5 w-5" />
             </div>
           </div>
@@ -99,15 +101,15 @@ export default function AnalyticsDashboard({ data, skills, onReset, isResetting 
         </div>
 
         {/* KPI: Total Compute Executions */}
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5 hover:border-emerald-500/45 transition-all duration-300 group">
+        <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-5 hover:border-emerald-500/45 transition-all duration-300 group">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs font-mono text-zinc-400 tracking-wider uppercase">Agent API Calls</p>
+              <p className="text-xs font-mono text-slate-400 tracking-wider uppercase">Agent API Calls</p>
               <h3 className="text-3xl font-bold font-sans text-white mt-1 tracking-tight">
                 {totalExecutionsCount}
               </h3>
             </div>
-            <div className="bg-emerald-950/40 text-emerald-400 p-2.5 rounded-lg border border-emerald-900/30 group-hover:scale-105 transition-transform">
+            <div className="bg-emerald-950/80 text-emerald-400 p-2.5 rounded-lg border border-emerald-900/60 group-hover:scale-105 transition-transform">
               <Activity className="h-5 w-5" />
             </div>
           </div>
@@ -118,20 +120,20 @@ export default function AnalyticsDashboard({ data, skills, onReset, isResetting 
         </div>
 
         {/* KPI: Star Performer */}
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5 hover:border-blue-500/40 transition-all duration-300 group">
+        <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-5 hover:border-sky-500/45 transition-all duration-300 group">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs font-mono text-zinc-400 tracking-wider uppercase">Top Agency Skill</p>
+              <p className="text-xs font-mono text-slate-400 tracking-wider uppercase">Top Agency Skill</p>
               <h3 className="text-lg font-bold font-sans text-white mt-2 truncate w-40 tracking-tight" title={topUsedAgent}>
                 {topUsedAgent}
               </h3>
             </div>
-            <div className="bg-blue-950/40 text-blue-400 p-2.5 rounded-lg border border-blue-900/30 group-hover:scale-105 transition-transform">
+            <div className="bg-sky-950/80 text-sky-400 p-2.5 rounded-lg border border-sky-900/60 group-hover:scale-105 transition-transform">
               <Cpu className="h-5 w-5" />
             </div>
           </div>
-          <div className="flex items-center gap-1.5 mt-3.5 text-xs text-zinc-400">
-            <Layers className="h-3.5 w-3.5 text-blue-450" />
+          <div className="flex items-center gap-1.5 mt-3.5 text-xs text-slate-400">
+            <Layers className="h-3.5 w-3.5 text-sky-400" />
             <span>Most executed model</span>
           </div>
         </div>
@@ -141,27 +143,27 @@ export default function AnalyticsDashboard({ data, skills, onReset, isResetting 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Chart Card #1: Revenue Growth Over Time */}
-        <div className="p-5 bg-[#18181b] border border-[#27272a] rounded-xl relative">
+        <div className="p-5 bg-slate-900 border border-slate-800/80 rounded-xl relative">
           <div className="flex justify-between items-center mb-4">
             <div>
               <h4 className="text-sm font-semibold text-white">Gross Store Sales Revenue</h4>
-              <p className="text-xs text-zinc-400">Total monetization revenue over chronological trend</p>
+              <p className="text-xs text-slate-400">Total monetization revenue over chronological trend</p>
             </div>
-            <span className="text-xs font-mono bg-blue-950/40 text-blue-400 border border-blue-900/30 px-2 py-0.5 rounded">
+            <span className="text-xs font-mono bg-indigo-950 text-indigo-400 border border-indigo-900/50 px-2 py-0.5 rounded">
               Stripe & PayPal Live
             </span>
           </div>
 
           <div className="h-[200px] w-full flex items-center justify-center">
             {revenuePoints.length === 0 ? (
-              <div className="text-xs text-zinc-500 font-mono">Waiting for first purchase simulation data...</div>
+              <div className="text-xs text-slate-500">Waiting for first purchase simulation data...</div>
             ) : (
               <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-full overflow-visible">
                 {/* Defs for gradients */}
                 <defs>
                   <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#2563eb" stopOpacity="0.45" />
-                    <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
+                    <stop offset="0%" stopColor="#6366f1" stopOpacity="0.45" />
+                    <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
                   </linearGradient>
                 </defs>
 
@@ -176,14 +178,14 @@ export default function AnalyticsDashboard({ data, skills, onReset, isResetting 
                         y1={y} 
                         x2={chartWidth - padding.right} 
                         y2={y} 
-                        stroke="#27272a" 
+                        stroke="#334155" 
                         strokeWidth="1" 
                         strokeDasharray="4,4" 
                       />
                       <text 
                         x={padding.left - 8} 
                         y={y + 4} 
-                        fill="#a1a1aa" 
+                        fill="#94a3b8" 
                         fontSize="9" 
                         fontFamily="monospace"
                         textAnchor="end"
@@ -202,7 +204,7 @@ export default function AnalyticsDashboard({ data, skills, onReset, isResetting 
                       key={idx}
                       x={x}
                       y={chartHeight - 6}
-                      fill="#a1a1aa"
+                      fill="#94a3b8"
                       fontSize="9"
                       fontFamily="monospace"
                       textAnchor="middle"
@@ -220,7 +222,7 @@ export default function AnalyticsDashboard({ data, skills, onReset, isResetting 
                 <path 
                   d={linePath} 
                   fill="none" 
-                  stroke="#3b82f6" 
+                  stroke="#6366f1" 
                   strokeWidth="2.5" 
                   strokeLinecap="round" 
                   strokeLinejoin="round" 
@@ -247,8 +249,8 @@ export default function AnalyticsDashboard({ data, skills, onReset, isResetting 
                         cx={x}
                         cy={y}
                         r={isHovered ? "6" : "3.5"}
-                        fill={isHovered ? "#3b82f6" : "#172554"}
-                        stroke="#60a5fa"
+                        fill={isHovered ? "#6366f1" : "#1e1b4b"}
+                        stroke="#818cf8"
                         strokeWidth="2"
                         className="pointer-events-none transition-all duration-150"
                       />
@@ -261,28 +263,28 @@ export default function AnalyticsDashboard({ data, skills, onReset, isResetting 
 
           {/* Line Chart Active Tooltip */}
           {hoveredPointIdx !== null && revenuePoints[hoveredPointIdx] && (
-            <div className="absolute top-12 right-5 bg-zinc-950/95 border border-blue-500/30 rounded p-2.5 text-xs shadow-xl animate-fade-in pointer-events-none">
-              <p className="font-mono text-blue-400">Date: 2026-{revenuePoints[hoveredPointIdx].date}</p>
+            <div className="absolute top-12 right-5 bg-slate-950/95 border border-indigo-500/50 rounded p-2.5 text-xs shadow-xl animate-fade-in pointer-events-none">
+              <p className="font-mono text-indigo-400">Date: 2026-{revenuePoints[hoveredPointIdx].date}</p>
               <p className="font-bold text-white mt-0.5">Sales Gross: ${revenuePoints[hoveredPointIdx].amount.toFixed(2)}</p>
             </div>
           )}
         </div>
 
         {/* Chart Card #2: Usage stats by Agent Skill */}
-        <div className="p-5 bg-[#18181b] border border-[#27272a] rounded-xl relative">
+        <div className="p-5 bg-slate-900 border border-slate-800/80 rounded-xl relative">
           <div className="flex justify-between items-center mb-4">
             <div>
               <h4 className="text-sm font-semibold text-white">Agent Execution Traffic</h4>
-              <p className="text-xs text-zinc-400">Total API call volume processed per individual AI agent skill</p>
+              <p className="text-xs text-slate-400">Total API call volume processed per individual AI agent skill</p>
             </div>
-            <span className="text-xs font-mono bg-emerald-950/40 text-emerald-400 border border-emerald-900/30 px-2 py-0.5 rounded">
+            <span className="text-xs font-mono bg-emerald-950 text-emerald-400 border border-emerald-900/50 px-2 py-0.5 rounded">
               Compute Loads
             </span>
           </div>
 
           <div className="h-[200px] w-full flex items-center justify-center">
             {usagePoints.length === 0 ? (
-              <div className="text-xs text-zinc-500 font-mono">No api call execution records detected.</div>
+              <div className="text-xs text-slate-500">No api call execution records detected.</div>
             ) : (
               <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-full overflow-visible">
                 {/* Horizontal reference Lines */}
@@ -296,13 +298,13 @@ export default function AnalyticsDashboard({ data, skills, onReset, isResetting 
                         y1={y} 
                         x2={chartWidth - padding.right} 
                         y2={y} 
-                        stroke="#27272a" 
+                        stroke="#334155" 
                         strokeWidth="1" 
                       />
                       <text 
                         x={barChartLeftPadding - 8} 
                         y={y + 3} 
-                        fill="#a1a1aa" 
+                        fill="#94a3b8" 
                         fontSize="9" 
                         fontFamily="monospace"
                         textAnchor="end"
@@ -345,7 +347,7 @@ export default function AnalyticsDashboard({ data, skills, onReset, isResetting 
                       <text
                         x={x + barWidth / 2}
                         y={chartHeight - 8}
-                        fill="#a1a1aa"
+                        fill="#94a3b8"
                         fontSize="8.5"
                         textAnchor="middle"
                         className="opacity-90"
@@ -361,7 +363,7 @@ export default function AnalyticsDashboard({ data, skills, onReset, isResetting 
 
           {/* Bar Chart Active Tooltip */}
           {hoveredBarIdx !== null && usagePoints[hoveredBarIdx] && (
-            <div className="absolute top-12 right-5 bg-zinc-950/95 border border-emerald-500/30 rounded p-2.5 text-xs shadow-xl animate-fade-in pointer-events-none">
+            <div className="absolute top-12 right-5 bg-slate-950/95 border border-emerald-500/50 rounded p-2.5 text-xs shadow-xl animate-fade-in pointer-events-none">
               <p className="font-semibold text-white">{usagePoints[hoveredBarIdx].skillName}</p>
               <p className="font-mono text-emerald-400 mt-1">Total Runs: {usagePoints[hoveredBarIdx].count} API calls</p>
             </div>
@@ -373,51 +375,77 @@ export default function AnalyticsDashboard({ data, skills, onReset, isResetting 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         
         {/* Live Purchase Logs */}
-        <div className="xl:col-span-2 bg-[#18181b] border border-[#27272a] rounded-xl p-5">
-          <div className="flex justify-between items-center mb-4">
+        <div className="xl:col-span-2 bg-slate-900 border border-slate-800/80 rounded-xl p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div>
-              <h4 className="text-sm font-semibold text-white">Monetization Ledger</h4>
-              <p className="text-xs text-zinc-400">Verified Stripe and PayPal payment authorizations received</p>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-semibold text-white">Monetization Ledger</h4>
+                <span className="text-[10px] font-mono bg-indigo-950/80 text-indigo-400 border border-indigo-900/50 px-2 py-0.5 rounded">
+                  Merchant: {user?.name || "Rufus Tent"}
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Verified authorizations &bull; Payout target: <strong className="text-emerald-400 font-mono">{user?.merchantEmail || "rufustent@gmail.com"}</strong>
+              </p>
             </div>
             
-            <button
-              onClick={onReset}
-              disabled={isResetting}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-[#27272a] hover:border-zinc-500 hover:bg-zinc-800 text-zinc-300 rounded transition disabled:opacity-50"
-            >
-              <RefreshCw className={`h-3 w-3 ${isResetting ? 'animate-spin' : ''}`} />
-              Reset Workspace DB
-            </button>
+            <div className="flex items-center gap-2">
+              {onOpenCredentials && (
+                <button
+                  onClick={onOpenCredentials}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono border border-indigo-500/40 bg-indigo-950/40 hover:bg-indigo-950/80 text-indigo-300 rounded-lg transition cursor-pointer"
+                >
+                  <Key className="h-3 w-3 text-emerald-400" />
+                  Credentials
+                </button>
+              )}
+              <button
+                onClick={onReset}
+                disabled={isResetting}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-slate-700 hover:border-slate-500 hover:bg-slate-800 text-slate-300 rounded-lg transition disabled:opacity-50 cursor-pointer"
+              >
+                <RefreshCw className={`h-3 w-3 ${isResetting ? 'animate-spin' : ''}`} />
+                Reset DB
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
             {data.recentPurchases.length === 0 ? (
-              <div className="py-8 text-center text-xs text-zinc-500 font-mono">
+              <div className="py-8 text-center text-xs text-slate-500">
                 No purchases yet. Purchase a skill from the Store to test.
               </div>
             ) : (
-              <table className="w-full text-left text-xs text-zinc-350">
+              <table className="w-full text-left text-xs text-slate-300">
                 <thead>
-                  <tr className="border-b border-[#27272a] text-zinc-400 font-mono">
+                  <tr className="border-b border-slate-800 text-slate-400 font-mono">
                     <th className="pb-2.5 font-normal">Reference ID</th>
-                    <th className="pb-2.5 font-normal">License Holder</th>
-                    <th className="pb-2.5 font-normal">Acquired Agent Skill</th>
+                    <th className="pb-2.5 font-normal">Payer / Customer</th>
+                    <th className="pb-2.5 font-normal">Skill Licensed</th>
+                    <th className="pb-2.5 font-normal">Payee Destination</th>
                     <th className="pb-2.5 font-normal text-right">Price</th>
                     <th className="pb-2.5 font-normal text-right">Gateway</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#27272a]/50">
+                <tbody className="divide-y divide-slate-800/50">
                   {data.recentPurchases.map((p) => {
                     const skill = skills.find(s => s.id === p.skillId);
                     return (
-                      <tr key={p.id} className="hover:bg-[#09090b]/40 transition-colors">
-                        <td className="py-2.5 font-mono text-zinc-500">{p.id}</td>
-                        <td className="py-2.5 font-mono text-zinc-200">@{p.username}</td>
-                        <td className="py-2.5 text-zinc-300 truncate max-w-xs">{skill ? skill.name : p.skillId}</td>
+                      <tr key={p.id} className="hover:bg-slate-800/30 transition-colors">
+                        <td className="py-2.5 font-mono text-slate-500 text-xxs">{p.id}</td>
+                        <td className="py-2.5">
+                          <span className="font-mono text-slate-200 block text-xs">{p.userName || `@${p.username}`}</span>
+                          <span className="text-[10px] text-slate-500 font-mono block">{p.userEmail || `${p.username}@mail.com`}</span>
+                        </td>
+                        <td className="py-2.5 text-slate-300 truncate max-w-[140px]">{skill ? skill.name : p.skillId}</td>
+                        <td className="py-2.5">
+                          <span className="text-white font-mono text-xxs block font-semibold">{p.merchantName || user?.name || "Rufus Tent"}</span>
+                          <span className="text-emerald-400 font-mono text-[10px] block">{p.payoutDestination || user?.merchantEmail || "rufustent@gmail.com"}</span>
+                        </td>
                         <td className="py-2.5 text-right font-medium text-emerald-400 font-mono">${p.amount.toFixed(2)}</td>
                         <td className="py-2.5 text-right">
                           <span className={`inline-block px-2 py-0.5 rounded-sm font-mono text-[10px] tracking-wide uppercase ${
-                            p.paymentMethod === 'stripe' ? 'bg-blue-950/40 text-blue-400 border border-blue-900/30' : 'bg-blue-950/40 text-blue-400 border border-blue-900/30'
+                            p.paymentMethod === 'stripe' ? 'bg-indigo-950/80 text-indigo-400 border border-indigo-900/40' : 'bg-sky-950/80 text-sky-400 border border-sky-900/40'
                           }`}>
                             {p.paymentMethod}
                           </span>
@@ -432,29 +460,29 @@ export default function AnalyticsDashboard({ data, skills, onReset, isResetting 
         </div>
 
         {/* Live System Executions */}
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+        <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-5">
           <div className="mb-4">
             <h4 className="text-sm font-semibold text-white">Agent Activity Feed</h4>
-            <p className="text-xs text-zinc-400">Logs monitoring real-time AI compute</p>
+            <p className="text-xs text-slate-400">Logs monitoring real-time AI compute</p>
           </div>
 
           <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
             {data.recentExecutions.length === 0 ? (
-              <div className="py-8 text-center text-xs text-zinc-500 font-mono">
+              <div className="py-8 text-center text-xs text-slate-500">
                 No executions processed yet. Trigger an unlocked skill in the Sandbox first.
               </div>
             ) : (
               data.recentExecutions.slice(0, 7).map((exec) => (
-                <div key={exec.id} className="text-xs bg-[#09090b] rounded-lg p-3 border border-[#27272a]">
+                <div key={exec.id} className="text-xs bg-slate-950/60 rounded-lg p-3 border border-slate-800">
                   <div className="flex justify-between items-center">
-                    <span className="font-mono text-zinc-400 font-medium">@{exec.username}</span>
-                    <span className="text-[10px] text-zinc-500 font-mono">
+                    <span className="font-mono text-slate-400 font-medium">@{exec.username}</span>
+                    <span className="text-[10px] text-slate-500 font-mono">
                       {new Date(exec.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                     </span>
                   </div>
-                  <p className="text-blue-400 font-medium mt-1.5 truncate">{exec.skillName}</p>
-                  <p className="text-[#a1a1aa] italic mt-1 line-clamp-1">"{exec.prompt}"</p>
-                  <div className="flex justify-between items-center mt-2.5 pt-2 border-t border-[#27272a]/70 text-[10px] font-mono text-zinc-500">
+                  <p className="text-indigo-400 font-medium mt-1.5 truncate">{exec.skillName}</p>
+                  <p className="text-slate-400 italic mt-1 line-clamp-1">"{exec.prompt}"</p>
+                  <div className="flex justify-between items-center mt-2.5 pt-2 border-t border-slate-800/55 text-[10px] font-mono text-slate-500">
                     <span>Compute Output Success</span>
                     <span>~{exec.tokens} tokens</span>
                   </div>

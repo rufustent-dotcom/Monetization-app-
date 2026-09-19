@@ -2,31 +2,38 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
-import { AgentSkill, PurchaseRecord, UserSession, ExecutionRecord, AnalyticsData } from "./src/types";
+import { AgentSkill, PurchaseRecord, UserSession, ExecutionRecord, AnalyticsData, ApiStatus } from "./src/types";
 
-// Fallback user session - initialized with 'premium': false and empty skill list
+// Fallback user session - initialized with Rufus Tent credentials
 let userDb: UserSession = {
-  username: "test_user",
+  username: "rufus_tent",
+  name: "Rufus Tent",
+  email: "rufustent@gmail.com",
+  merchantName: "Rufus Tent",
+  merchantEmail: "rufustent@gmail.com",
+  businessName: "Rufus Tent AI Solutions",
+  stripeAccountId: "acct_rufus_tent_live_884",
+  paypalMerchantId: "rufustent@gmail.com",
   isPremium: false,
   purchasedSkills: []
 };
 
-// Initial historical data for analytics display
+// Initial historical data for analytics display with Rufus Tent merchant credentials
 let purchases: PurchaseRecord[] = [
-  { id: "p-001", username: "dev_alpha", skillId: "financial-forecaster", amount: 19.00, paymentMethod: "stripe", timestamp: "2026-05-15T10:30:00Z" },
-  { id: "p-002", username: "marketing_guru", skillId: "copywriting-assistant", amount: 9.00, paymentMethod: "paypal", timestamp: "2026-05-16T14:20:00Z" },
-  { id: "p-003", username: "sql_master", skillId: "sql-wizard", amount: 15.00, paymentMethod: "stripe", timestamp: "2026-05-17T09:15:00Z" },
-  { id: "p-004", username: "saas_builder", skillId: "financial-forecaster", amount: 19.00, paymentMethod: "stripe", timestamp: "2026-05-18T16:45:00Z" },
-  { id: "p-005", username: "seo_expert", skillId: "seo-optimizer", amount: 12.00, paymentMethod: "paypal", timestamp: "2026-05-19T11:05:00Z" },
-  { id: "p-006", username: "growth_hacker", skillId: "sql-wizard", amount: 15.00, paymentMethod: "stripe", timestamp: "2026-05-20T13:22:00Z" }
+  { id: "p-001", username: "dev_alpha", userName: "Dev Alpha", userEmail: "alpha@clouddev.io", skillId: "financial-forecaster", amount: 19.00, paymentMethod: "stripe", merchantName: "Rufus Tent", merchantEmail: "rufustent@gmail.com", payoutDestination: "rufustent@gmail.com", timestamp: "2026-05-15T10:30:00Z" },
+  { id: "p-002", username: "rufus_tent", userName: "Rufus Tent", userEmail: "rufustent@gmail.com", skillId: "copywriting-assistant", amount: 9.00, paymentMethod: "paypal", merchantName: "Rufus Tent", merchantEmail: "rufustent@gmail.com", payoutDestination: "rufustent@gmail.com", timestamp: "2026-05-16T14:20:00Z" },
+  { id: "p-003", username: "sql_master", userName: "SQL Master", userEmail: "sql@datapipe.org", skillId: "sql-wizard", amount: 15.00, paymentMethod: "stripe", merchantName: "Rufus Tent", merchantEmail: "rufustent@gmail.com", payoutDestination: "rufustent@gmail.com", timestamp: "2026-05-17T09:15:00Z" },
+  { id: "p-004", username: "saas_builder", userName: "SaaS Founder", userEmail: "founder@venture.co", skillId: "financial-forecaster", amount: 19.00, paymentMethod: "stripe", merchantName: "Rufus Tent", merchantEmail: "rufustent@gmail.com", payoutDestination: "rufustent@gmail.com", timestamp: "2026-05-18T16:45:00Z" },
+  { id: "p-005", username: "rufus_tent", userName: "Rufus Tent", userEmail: "rufustent@gmail.com", skillId: "seo-optimizer", amount: 12.00, paymentMethod: "paypal", merchantName: "Rufus Tent", merchantEmail: "rufustent@gmail.com", payoutDestination: "rufustent@gmail.com", timestamp: "2026-05-19T11:05:00Z" },
+  { id: "p-006", username: "growth_hacker", userName: "Growth Specialist", userEmail: "viral@growthhub.net", skillId: "sql-wizard", amount: 15.00, paymentMethod: "stripe", merchantName: "Rufus Tent", merchantEmail: "rufustent@gmail.com", payoutDestination: "rufustent@gmail.com", timestamp: "2026-05-20T13:22:00Z" }
 ];
 
 let executions: ExecutionRecord[] = [
-  { id: "e-001", username: "dev_alpha", skillId: "devops-architect", skillName: "Cloud DevOps Config Generator", prompt: "Create docker-compose with postgres and redis", response: "```yaml\nversion: '3.8'\nservices:\n  db:\n    image: postgres:15-alpine\n...", timestamp: "2026-05-15T11:00:00Z", tokens: 230 },
+  { id: "e-001", username: "rufus_tent", skillId: "devops-architect", skillName: "Cloud DevOps Config Generator", prompt: "Create docker-compose with postgres and redis", response: "```yaml\nversion: '3.8'\nservices:\n  db:\n    image: postgres:15-alpine\n...", timestamp: "2026-05-15T11:00:00Z", tokens: 230 },
   { id: "e-002", username: "dev_alpha", skillId: "financial-forecaster", skillName: "Financial Health Forecaster", prompt: "Summarize Q1 SaaS revenue of $200k", response: "Based on our Q1 statement, the SaaS shows strong momentum...", timestamp: "2026-05-15T11:45:00Z", tokens: 410 },
-  { id: "e-003", username: "marketing_guru", skillId: "growth-hacker", skillName: "Viral Post Hook Crafter", prompt: "Hooks about bootstrap financing", response: "1. 'Why your bank wants you to fail...' \n2. '0 to $1M on dry leaves...'", timestamp: "2026-05-16T15:10:00Z", tokens: 190 },
+  { id: "e-003", username: "rufus_tent", skillId: "growth-hacker", skillName: "Viral Post Hook Crafter", prompt: "Hooks about bootstrap financing", response: "1. 'Why your bank wants you to fail...' \n2. '0 to $1M on dry leaves...'", timestamp: "2026-05-16T15:10:00Z", tokens: 190 },
   { id: "e-004", username: "marketing_guru", skillId: "copywriting-assistant", skillName: "Persuasive Ad Copy Generator", prompt: "SaaS backup app", response: "Save yourself. Backup files automatically in 3 seconds...", timestamp: "2026-05-16T15:30:00Z", tokens: 320 },
-  { id: "e-005", username: "sql_master", skillId: "sql-wizard", skillName: "Natural Language to SQL", prompt: "Users table with signups last month", response: "```sql\nSELECT COUNT(*), DATE(created_at) FROM users WHERE ...\n```", timestamp: "2026-05-17T10:00:00Z", tokens: 280 }
+  { id: "e-005", username: "rufus_tent", skillId: "sql-wizard", skillName: "Natural Language to SQL", prompt: "Users table with signups last month", response: "```sql\nSELECT COUNT(*), DATE(created_at) FROM users WHERE ...\n```", timestamp: "2026-05-17T10:00:00Z", tokens: 280 }
 ];
 
 // Defined skills in application
@@ -136,10 +143,31 @@ async function runServer() {
     res.json(userDb);
   });
 
+  // Update user credentials
+  app.put("/api/user/credentials", (req, res) => {
+    const { name, email, username, merchantName, merchantEmail, businessName, stripeAccountId, paypalMerchantId } = req.body;
+    if (name) userDb.name = name;
+    if (email) userDb.email = email;
+    if (username) userDb.username = username;
+    if (merchantName) userDb.merchantName = merchantName;
+    if (merchantEmail) userDb.merchantEmail = merchantEmail;
+    if (businessName) userDb.businessName = businessName;
+    if (stripeAccountId) userDb.stripeAccountId = stripeAccountId;
+    if (paypalMerchantId) userDb.paypalMerchantId = paypalMerchantId;
+    res.json({ success: true, user: userDb });
+  });
+
   // Reset demo databases
   app.post("/api/user/reset", (req, res) => {
     userDb = {
-      username: "test_user",
+      username: "rufus_tent",
+      name: "Rufus Tent",
+      email: "rufustent@gmail.com",
+      merchantName: "Rufus Tent",
+      merchantEmail: "rufustent@gmail.com",
+      businessName: "Rufus Tent AI Solutions",
+      stripeAccountId: "acct_rufus_tent_live_884",
+      paypalMerchantId: "rufustent@gmail.com",
       isPremium: false,
       purchasedSkills: []
     };
@@ -150,21 +178,26 @@ async function runServer() {
 
   // PURCHASE Endpoints
   app.post("/api/purchase", (req, res) => {
-    const { skillId, paymentMethod, amount } = req.body;
+    const { skillId, paymentMethod, amount, payerName, payerEmail } = req.body;
     
     const skill = SKILLS.find(s => s.id === skillId);
     if (!skill) {
       return res.status(404).json({ error: "Agent skill not found" });
     }
 
-    // Process purchase recording
+    // Process purchase recording with Rufus Tent credentials & payout routing
     const purchaseId = `demo-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     const newPurchase: PurchaseRecord = {
       id: purchaseId,
       username: userDb.username,
+      userName: payerName || userDb.name,
+      userEmail: payerEmail || userDb.email,
       skillId: skillId,
       amount: Number(amount) || skill.price,
       paymentMethod: paymentMethod === "paypal" ? "paypal" : "stripe",
+      merchantName: userDb.merchantName,
+      merchantEmail: userDb.merchantEmail,
+      payoutDestination: userDb.merchantEmail,
       timestamp: new Date().toISOString()
     };
 
@@ -244,9 +277,80 @@ async function runServer() {
     res.json(body);
   });
 
-  // EXECUTE AGENCY SKILL (Gemini-backed + local backup mode)
+  // API INTEGRATIONS & SPECIAL PAID SERVICES STATUS Endpoint
+  app.get("/api/apis/status", (req, res) => {
+    const apis: ApiStatus[] = [
+      {
+        id: "gemini",
+        name: "Google Gemini 3.5 Flash",
+        category: "AI Models",
+        isPaid: false,
+        isConfigured: !!process.env.GEMINI_API_KEY,
+        envVar: "GEMINI_API_KEY",
+        description: "Standard primary server-side LLM engine with system instruction & sandboxing support."
+      },
+      {
+        id: "openai",
+        name: "OpenAI GPT-4o / Reasoning",
+        category: "Special Paid AI",
+        isPaid: true,
+        isConfigured: !!process.env.OPENAI_API_KEY,
+        envVar: "OPENAI_API_KEY",
+        description: "Special paid AI model provider for high-complexity agent reasoning, coding, and analytics."
+      },
+      {
+        id: "anthropic",
+        name: "Anthropic Claude 3.5 Sonnet",
+        category: "Special Paid AI",
+        isPaid: true,
+        isConfigured: !!process.env.ANTHROPIC_API_KEY,
+        envVar: "ANTHROPIC_API_KEY",
+        description: "Special paid AI model for advanced long-form copywriting, architecture design, and nuanced reasoning."
+      },
+      {
+        id: "stripe_secret",
+        name: "Stripe Production Secret Key",
+        category: "Payment Processing",
+        isPaid: true,
+        isConfigured: !!process.env.STRIPE_SECRET_KEY,
+        envVar: "STRIPE_SECRET_KEY",
+        description: "Live production merchant secret key for automated webhook verification and bank payouts."
+      },
+      {
+        id: "paypal_secret",
+        name: "PayPal REST Client Secret",
+        category: "Payment Processing",
+        isPaid: true,
+        isConfigured: !!process.env.PAYPAL_CLIENT_SECRET,
+        envVar: "PAYPAL_CLIENT_SECRET",
+        description: "Merchant secret key for authenticating live PayPal REST payouts and instant settlement captures."
+      },
+      {
+        id: "serper",
+        name: "Serper / Google Search API",
+        category: "Search & Grounding",
+        isPaid: true,
+        isConfigured: !!process.env.SERPER_API_KEY,
+        envVar: "SERPER_API_KEY",
+        description: "Special paid live web search engine for agent grounding, SERP analysis, and real-time facts."
+      },
+      {
+        id: "custom_paid",
+        name: "Custom Enterprise Paid API",
+        category: "Custom Enterprise",
+        isPaid: true,
+        isConfigured: !!(process.env.CUSTOM_PAID_API_KEY || process.env.CUSTOM_PAID_API_URL),
+        envVar: "CUSTOM_PAID_API_KEY",
+        description: "Dedicated private microservice endpoint configured for custom proprietary workflows."
+      }
+    ];
+
+    res.json(apis);
+  });
+
+  // EXECUTE AGENCY SKILL (Gemini, OpenAI, Anthropic, or Custom Paid APIs)
   app.post("/api/run-skill", async (req, res) => {
-    const { skillId, prompt } = req.body;
+    const { skillId, prompt, engine } = req.body;
 
     const skill = SKILLS.find(s => s.id === skillId);
     if (!skill) {
@@ -268,95 +372,156 @@ async function runServer() {
       return res.status(400).json({ error: "Prompt is required to run the agent skill." });
     }
 
-    // Lazy load the Gemini client
-    const ai = getGeminiClient();
+    const selectedEngine = engine || "gemini";
     let responseText = "";
     let isMock = false;
-    let errDetails: any = null;
+    let engineUsed = "Google Gemini 3.5 Flash";
 
-    if (ai) {
-      try {
-        const result = await ai.models.generateContent({
-          model: "gemini-3.5-flash",
-          contents: prompt,
-          config: {
-            systemInstruction: skill.systemInstruction
-          }
-        });
-
-        responseText = result.text || "Agent processed your request, but returned a blank message.";
-      } catch (err: any) {
-        isMock = true;
-
-        let apiDisabled = false;
-        let isDeniedAccess = false;
-        let activationUrl = "";
-        let errMessageText = "An unexpected error occurred during the Gemini API call.";
-
-        // Convert error to a workable string
-        let errStr = "";
-        if (err && typeof err === "object") {
-          try {
-            errStr = err.message || JSON.stringify(err);
-          } catch (e) {
-            errStr = String(err);
-          }
-        } else {
-          errStr = String(err);
-        }
-
-        if (
-          errStr.includes("denied access") ||
-          errStr.includes("PERMISSION_DENIED") ||
-          errStr.includes("Your project has been denied access")
-        ) {
-          isDeniedAccess = true;
-          errMessageText = "Your Google Cloud project has been denied access to the Gemini API. Please contact support or verify your Gemini API credentials.";
-          console.warn("[Gemini API Notice] Live Gemini connection bypassed (Permission Denied). Using high-fidelity local simulator fallback.");
-        } else if (
-          errStr.includes("disabled") ||
-          errStr.includes("generativelanguage.googleapis.com") ||
-          errStr.includes("403") ||
-          errStr.includes("165751882951")
-        ) {
-          apiDisabled = true;
-          errMessageText = "Gemini API activation pending. The Generative Language API is currently disabled or has not been enabled inside Google Cloud project 165751882951.";
-          console.warn("[Gemini API Notice] Live Gemini connection bypassed (Activation Pending). Using high-fidelity local simulator fallback.");
-          
-          // Regex search for activation link
-          const urlMatch = errStr.match(/https:\/\/console\.developers\.google\.com\/[^\s"'}]+/);
-          if (urlMatch) {
-            activationUrl = urlMatch[0].replace(/[\\,;.]+$/, "");
+    // Route 1: OpenAI Special Paid API
+    if (selectedEngine === "openai") {
+      if (process.env.OPENAI_API_KEY) {
+        try {
+          const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+              model: "gpt-4o",
+              messages: [
+                { role: "system", content: skill.systemInstruction },
+                { role: "user", content: prompt }
+              ],
+              temperature: 0.7
+            })
+          });
+          const data: any = await resp.json();
+          if (data?.choices?.[0]?.message?.content) {
+            responseText = data.choices[0].message.content;
+            engineUsed = "OpenAI GPT-4o (Special Paid API)";
           } else {
-            activationUrl = "https://console.developers.google.com/apis/api/generativelanguage.googleapis.com/overview?project=165751882951";
+            throw new Error(data?.error?.message || "Invalid payload response from OpenAI API.");
           }
-        } else if (errStr) {
-          errMessageText = errStr;
-          console.warn("[Gemini API Notice] Live Gemini call encountered an issue. Using sandbox simulator fallback. Issue: " + errMessageText);
+        } catch (err: any) {
+          console.error("OpenAI Error:", err);
+          responseText = `[OpenAI Paid API Notice: Request failed (${err?.message || err}). Falling back to local emulator.]\n\n` + getMockResponseForSkill(skill.id, prompt);
+          isMock = true;
+          engineUsed = "OpenAI GPT-4o (Emulated)";
         }
-
-        errDetails = {
-          message: errMessageText,
-          apiDisabled: apiDisabled,
-          isDeniedAccess: isDeniedAccess,
-          activationUrl: activationUrl || "https://console.developers.google.com/apis/api/generativelanguage.googleapis.com/overview?project=165751882951"
-        };
-
-        responseText = `[Sandbox API Notice: Live Gemini connection could not be established: ${errMessageText}. Falling back to sandbox response code.]\n\n### Simulated Agent Response for: ${skill.name}\n\nHere is a comprehensive framework responding to your request:\n\n*   **Target Scope:** ${prompt}\n*   **Agent Directives:** Loaded system instructions correctly.\n*   **Agent Synthesized Analysis:** This is an offline test-sandbox execution block. Please check that your Gemini API activation parameters are correct. You can click 'Enable Gemini API' in the notification banner above to activate it.`;
+      } else {
+        isMock = true;
+        engineUsed = "OpenAI GPT-4o (Sandbox Mode)";
+        responseText = `[Notice: OPENAI_API_KEY is not yet populated in Settings > Secrets. Executing in high-fidelity sandbox mode.]\n\n` + getMockResponseForSkill(skill.id, prompt);
       }
-    } else {
-      // Offline mock responses matching skills for incredible high-fidelity visual experience
-      isMock = true;
-      responseText = getMockResponseForSkill(skill.id, prompt);
+    }
+    // Route 2: Anthropic Claude Special Paid API
+    else if (selectedEngine === "anthropic") {
+      if (process.env.ANTHROPIC_API_KEY) {
+        try {
+          const resp = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": process.env.ANTHROPIC_API_KEY,
+              "anthropic-version": "2023-06-01"
+            },
+            body: JSON.stringify({
+              model: "claude-3-5-sonnet-20241022",
+              max_tokens: 1800,
+              system: skill.systemInstruction,
+              messages: [
+                { role: "user", content: prompt }
+              ]
+            })
+          });
+          const data: any = await resp.json();
+          if (data?.content?.[0]?.text) {
+            responseText = data.content[0].text;
+            engineUsed = "Claude 3.5 Sonnet (Special Paid API)";
+          } else {
+            throw new Error(data?.error?.message || "Invalid response structure from Anthropic API.");
+          }
+        } catch (err: any) {
+          console.error("Anthropic Error:", err);
+          responseText = `[Anthropic Paid API Notice: Request failed (${err?.message || err}). Falling back to local emulator.]\n\n` + getMockResponseForSkill(skill.id, prompt);
+          isMock = true;
+          engineUsed = "Claude 3.5 Sonnet (Emulated)";
+        }
+      } else {
+        isMock = true;
+        engineUsed = "Claude 3.5 Sonnet (Sandbox Mode)";
+        responseText = `[Notice: ANTHROPIC_API_KEY is not yet populated in Settings > Secrets. Executing in high-fidelity sandbox mode.]\n\n` + getMockResponseForSkill(skill.id, prompt);
+      }
+    }
+    // Route 3: Custom Enterprise Paid API
+    else if (selectedEngine === "custom_paid") {
+      if (process.env.CUSTOM_PAID_API_URL) {
+        try {
+          const resp = await fetch(process.env.CUSTOM_PAID_API_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(process.env.CUSTOM_PAID_API_KEY ? { "Authorization": `Bearer ${process.env.CUSTOM_PAID_API_KEY}` } : {})
+            },
+            body: JSON.stringify({
+              skill: skill.id,
+              systemInstruction: skill.systemInstruction,
+              prompt: prompt,
+              merchantEmail: userDb.merchantEmail
+            })
+          });
+          const data: any = await resp.json();
+          responseText = data?.output || data?.result || JSON.stringify(data, null, 2);
+          engineUsed = "Custom Enterprise Paid API";
+        } catch (err: any) {
+          console.error("Custom Paid API Error:", err);
+          responseText = `[Custom Paid API Notice: Request failed (${err?.message || err}). Falling back to local emulator.]\n\n` + getMockResponseForSkill(skill.id, prompt);
+          isMock = true;
+          engineUsed = "Custom Paid API (Emulated)";
+        }
+      } else {
+        isMock = true;
+        engineUsed = "Custom Paid API (Sandbox Mode)";
+        responseText = `[Notice: CUSTOM_PAID_API_URL is not configured in Settings > Secrets. Executing in high-fidelity sandbox mode.]\n\n` + getMockResponseForSkill(skill.id, prompt);
+      }
+    }
+    // Route 4: Default Gemini Model
+    else {
+      const ai = getGeminiClient();
+      if (ai) {
+        try {
+          const result = await ai.models.generateContent({
+            model: "gemini-3.5-flash",
+            contents: prompt,
+            config: {
+              systemInstruction: skill.systemInstruction
+            }
+          });
+
+          responseText = result.text || "Agent processed your request, but returned a blank message.";
+          engineUsed = "Google Gemini 3.5 Flash";
+        } catch (err: any) {
+          console.error("Gemini Error:", err);
+          responseText = `[Sandbox API Notice: Your local Gemini call encountered an error: ${err?.message || err}. Falling back to sandbox response code.]\n\n### Simulated Agent Response for: ${skill.name}\n\nHere is a comprehensive framework responding to your request:\n\n*   **Target Scope:** ${prompt}\n*   **Agent Directives:** Loaded system instructions correctly.\n*   **Agent Synthesized Analysis:** This is an offline test-sandbox execution block. Please check that your Gemini API config variables are configured correctly under Settings > Secrets.`;
+          isMock = true;
+          engineUsed = "Google Gemini 3.5 Flash (Fallback)";
+        }
+      } else {
+        isMock = true;
+        responseText = getMockResponseForSkill(skill.id, prompt);
+        engineUsed = "Google Gemini 3.5 Flash (Offline Demo)";
+      }
     }
 
     // Append to Execution database
-    const execId = `demo-exec-${Date.now()}`;
+    const execId = `exec-${Date.now()}`;
     const newExec: ExecutionRecord = {
       id: execId,
       username: userDb.username,
       skillId: skillId,
       skillName: skill.name,
+      engineUsed: engineUsed,
       prompt: prompt,
       response: responseText,
       timestamp: new Date().toISOString(),
@@ -369,7 +534,7 @@ async function runServer() {
       success: true,
       execution: newExec,
       offlineSimulated: isMock,
-      errDetails: errDetails
+      engineUsed: engineUsed
     });
   });
 
@@ -568,20 +733,6 @@ Below is the optimized topical architecture addressing: "${prompt}".
         return `### 🔍 Emulated Agent Sandbox Respond\n\nPrompt received: "${prompt}"\n\nAgent status is healthy. Setup your custom prompt configurations to test detailed responses.`;
     }
   }
-
-  // Route to serve the static vanilla HTML/CSS/JS frontend
-  app.get("/demo", (req, res) => {
-    const devPath = path.join(process.cwd(), "public", "demo.html");
-    const prodPath = path.join(process.cwd(), "dist", "demo.html");
-    const fs = require("fs");
-    if (fs.existsSync(devPath)) {
-      res.sendFile(devPath);
-    } else if (fs.existsSync(prodPath)) {
-      res.sendFile(prodPath);
-    } else {
-      res.status(404).send("Demo interface file not found.");
-    }
-  });
 
   // ----------------------------------------------------
   // Vite Integration for client loading

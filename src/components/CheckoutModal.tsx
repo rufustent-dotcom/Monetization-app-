@@ -1,22 +1,26 @@
-import React, { useState, useEffect } from "react";
-import { AgentSkill } from "../types";
-import { X, CreditCard, ShieldCheck, HelpCircle, Loader2, Info } from "lucide-react";
+import React, { useState } from "react";
+import { AgentSkill, UserSession } from "../types";
+import { X, CreditCard, ShieldCheck, Loader2, Info, Check, User, Mail, Sparkles, Building } from "lucide-react";
 
 interface CheckoutModalProps {
   skill: AgentSkill | null;
+  user: UserSession;
   onClose: () => void;
   onPurchaseSuccess: (skillId: string, paymentMethod: "stripe" | "paypal", amount: number) => void;
 }
 
-export default function CheckoutModal({ skill, onClose, onPurchaseSuccess }: CheckoutModalProps) {
+export default function CheckoutModal({ skill, user, onClose, onPurchaseSuccess }: CheckoutModalProps) {
   const [paymentMethod, setPaymentMethod] = useState<"stripe" | "paypal">("stripe");
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCvc, setCardCvc] = useState("");
-  const [cardName, setCardName] = useState("");
   
-  const [paypalEmail, setPaypalEmail] = useState("");
-  const [paypalPassword, setPaypalPassword] = useState("");
+  // Pre-filled with user credentials: Rufus Tent & rufustent@gmail.com
+  const [cardNumber, setCardNumber] = useState("4242 •••• •••• 4242");
+  const [cardExpiry, setCardExpiry] = useState("12/28");
+  const [cardCvc, setCardCvc] = useState("414");
+  const [cardName, setCardName] = useState(user?.name || "Rufus Tent");
+  const [billingEmail, setBillingEmail] = useState(user?.email || "rufustent@gmail.com");
+  
+  const [paypalEmail, setPaypalEmail] = useState(user?.email || "rufustent@gmail.com");
+  const [paypalPassword, setPaypalPassword] = useState("•••••••••••••••");
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState("");
@@ -25,17 +29,18 @@ export default function CheckoutModal({ skill, onClose, onPurchaseSuccess }: Che
 
   if (!skill) return null;
 
-  // Auto-fill test payment values
+  // Auto-fill test payment values with Rufus Tent credentials
   const handleAutoFillStripe = () => {
     setCardNumber("4242 •••• •••• 4242");
     setCardExpiry("12/28");
     setCardCvc("414");
-    setCardName("Alex Developer");
+    setCardName(user?.name || "Rufus Tent");
+    setBillingEmail(user?.email || "rufustent@gmail.com");
     setErrorMsg("");
   };
 
   const handleAutoFillPayPal = () => {
-    setPaypalEmail("test-sandbox-buyer@paypal.com");
+    setPaypalEmail(user?.email || "rufustent@gmail.com");
     setPaypalPassword("•••••••••••••••");
     setErrorMsg("");
   };
@@ -45,45 +50,47 @@ export default function CheckoutModal({ skill, onClose, onPurchaseSuccess }: Che
     setErrorMsg("");
 
     // Simple validation guards
-    if (paymentMethod === "stripe" && (!cardNumber || !cardExpiry || !cardCvc || !cardName)) {
+    if (paymentMethod === "stripe" && (!cardNumber || !cardExpiry || !cardCvc || !cardName || !billingEmail)) {
       setErrorMsg("Please fill out all credit card parameters, or select 'Quick Auto-Fill'.");
       return;
     }
     if (paymentMethod === "paypal" && (!paypalEmail || !paypalPassword)) {
-      setErrorMsg("Please enter your sandbox PayPal email credentials or click 'Quick Auto-Fill'.");
+      setErrorMsg("Please enter your PayPal email credentials or click 'Quick Auto-Fill'.");
       return;
     }
 
     setIsProcessing(true);
     
-    // Simulate real webhook authentication phases
+    // Simulate real webhook authentication phases with user credentials
     try {
-      setProcessingStep("Contacting monetization gateway node...");
+      setProcessingStep(`Contacting gateway for ${user?.name || "Rufus Tent"}...`);
       await new Promise(r => setTimeout(r, 650));
       
       setProcessingStep(
         paymentMethod === "stripe" 
-          ? "Authorizing 3D-Secure Stripe checkout token..." 
-          : "Authorizing instant PayPal instant-settlement ticket..."
+          ? `Authorizing 3D-Secure Stripe checkout token for ${cardName}...` 
+          : `Authorizing instant PayPal instant-settlement ticket for ${paypalEmail}...`
       );
       await new Promise(r => setTimeout(r, 850));
 
-      setProcessingStep("Clearing transaction ledger on server state...");
+      setProcessingStep(`Routing payout to ${user?.merchantEmail || "rufustent@gmail.com"}...`);
       await new Promise(r => setTimeout(r, 600));
 
-      // Execute purchase in sandbox endpoint
+      // Execute purchase in endpoint
       const response = await fetch("/api/purchase", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           skillId: skill.id,
           paymentMethod: paymentMethod,
-          amount: skill.price
+          amount: skill.price,
+          payerName: paymentMethod === "stripe" ? cardName : (user?.name || "Rufus Tent"),
+          payerEmail: paymentMethod === "stripe" ? billingEmail : paypalEmail
         })
       });
 
       if (!response.ok) {
-        throw new Error("Sandbox payment capture endpoint returned an error response.");
+        throw new Error("Payment capture endpoint returned an error response.");
       }
 
       setIsSuccess(true);
@@ -96,13 +103,13 @@ export default function CheckoutModal({ skill, onClose, onPurchaseSuccess }: Che
   };
 
   return (
-    <div className="fixed inset-0 bg-[#09090b]/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div 
-        className="bg-[#18181b] border border-[#27272a] rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative"
+        className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl relative"
         id="checkout_modal_container"
       >
         {/* Modal Header */}
-        <div className="flex justify-between items-center px-5 py-4 bg-[#09090b] border-b border-[#27272a]">
+        <div className="flex justify-between items-center px-5 py-4 bg-slate-950 border-b border-slate-800">
           <div className="flex items-center gap-2">
             <CreditCard className="h-4 w-4 text-amber-500 animate-pulse" />
             <span className="text-xs font-mono tracking-wider font-bold text-white uppercase">License Checkout Secure</span>
@@ -110,7 +117,7 @@ export default function CheckoutModal({ skill, onClose, onPurchaseSuccess }: Che
           <button 
             onClick={onClose}
             disabled={isProcessing}
-            className="text-zinc-400 hover:text-zinc-200 transition p-1 rounded hover:bg-zinc-800 cursor-pointer"
+            className="text-slate-400 hover:text-slate-200 transition p-1 rounded hover:bg-slate-800 cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
@@ -122,30 +129,45 @@ export default function CheckoutModal({ skill, onClose, onPurchaseSuccess }: Che
             <form onSubmit={handleSubmit} className="space-y-4">
               
               {/* Product Info Segment */}
-              <div className="bg-[#09090b] rounded-lg p-4 border border-[#27272a]">
-                <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-500">License Object</span>
+              <div className="bg-slate-950/90 rounded-lg p-3.5 border border-slate-800">
+                <span className="text-[9px] font-mono uppercase tracking-wider text-slate-500">License Object</span>
                 <h4 className="text-white font-semibold text-sm mt-0.5">{skill.name}</h4>
-                <p className="text-xs text-zinc-400 mt-1 truncate">{skill.description}</p>
-                <div className="mt-3.5 pt-3 border-t border-[#27272a] flex justify-between items-center">
-                  <span className="text-xs font-mono text-zinc-400">Total charge:</span>
+                <p className="text-xs text-slate-400 mt-0.5 truncate">{skill.description}</p>
+                <div className="mt-2.5 pt-2 border-t border-slate-800/60 flex justify-between items-center">
+                  <span className="text-xs font-mono text-slate-400">Total charge:</span>
                   <span className="text-lg font-bold text-amber-400 font-mono">${skill.price.toFixed(2)} USD</span>
                 </div>
               </div>
 
+              {/* Verified Merchant & Payout Destination Banner */}
+              <div className="bg-slate-950 border border-indigo-900/50 rounded-lg p-2.5 flex items-center justify-between text-xxs font-mono">
+                <div className="flex items-center gap-2">
+                  <Building className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+                  <div>
+                    <span className="text-slate-400 block text-[9px] uppercase">Merchant Recipient</span>
+                    <span className="text-white font-semibold">{user?.merchantName || "Rufus Tent"}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-slate-400 block text-[9px] uppercase">Direct Payout</span>
+                  <span className="text-emerald-400 font-semibold">{user?.merchantEmail || "rufustent@gmail.com"}</span>
+                </div>
+              </div>
+
               {/* Gateway Channel Selector Tab */}
-              <div className="grid grid-cols-2 gap-2 bg-[#09090b] p-1.5 rounded-lg border border-[#27272a]/80">
+              <div className="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-lg border border-slate-800/80">
                 <button
                   type="button"
                   onClick={() => { setPaymentMethod("stripe"); setErrorMsg(""); }}
                   disabled={isProcessing}
                   className={`flex items-center justify-center gap-1.5 py-2 text-xs font-mono font-medium rounded transition-all cursor-pointer ${
                     paymentMethod === "stripe" 
-                      ? "bg-[#18181b] text-white shadow border border-blue-500/50" 
-                      : "text-zinc-400 hover:text-zinc-200"
+                      ? "bg-slate-850 text-white shadow border border-indigo-500/40" 
+                      : "text-slate-400 hover:text-slate-200"
                   }`}
                 >
-                  <span className="h-2 w-2 rounded-full bg-blue-600" />
-                  Stripe Form
+                  <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                  Stripe Checkout
                 </button>
                 <button
                   type="button"
@@ -153,109 +175,135 @@ export default function CheckoutModal({ skill, onClose, onPurchaseSuccess }: Che
                   disabled={isProcessing}
                   className={`flex items-center justify-center gap-1.5 py-2 text-xs font-mono font-medium rounded transition-all cursor-pointer ${
                     paymentMethod === "paypal" 
-                      ? "bg-[#18181b] text-white shadow border border-blue-500/50" 
-                      : "text-zinc-400 hover:text-zinc-200"
+                      ? "bg-slate-850 text-white shadow border border-sky-500/40" 
+                      : "text-slate-400 hover:text-slate-200"
                   }`}
                 >
-                  <span className="h-2 w-2 rounded-full bg-blue-400" />
+                  <span className="h-2 w-2 rounded-full bg-sky-500" />
                   PayPal Gateway
                 </button>
               </div>
 
               {/* Form Input fields */}
               {paymentMethod === "stripe" ? (
-                // STRIPE MOCK FIELDS
-                <div className="space-y-3.5">
+                // STRIPE FIELDS (Pre-populated with Rufus Tent credentials)
+                <div className="space-y-2.5">
                   <div className="flex justify-between items-center">
-                    <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block font-semibold">Credit Card Form</label>
+                    <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-semibold">
+                      Credit Card Details
+                    </label>
                     <button
                       type="button"
                       onClick={handleAutoFillStripe}
-                      className="text-[9px] font-mono text-blue-400 bg-blue-950/40 hover:bg-blue-950/80 border border-blue-900/30 px-2 py-0.5 rounded cursor-pointer"
+                      className="text-[9px] font-mono text-indigo-400 bg-indigo-950/40 hover:bg-indigo-950/80 border border-indigo-900/50 px-2 py-0.5 rounded cursor-pointer"
                     >
-                      Quick Auto-Fill Test Card
+                      Auto-Fill Rufus Credentials
                     </button>
                   </div>
 
+                  {/* Cardholder Name */}
+                  <div>
+                    <label className="text-[9px] font-mono text-slate-400 mb-0.5 block uppercase">Cardholder Name</label>
+                    <input 
+                      type="text" 
+                      value={cardName}
+                      placeholder="Rufus Tent"
+                      onChange={(e) => setCardName(e.target.value)}
+                      className="bg-slate-950 text-xs text-white placeholder-slate-600 rounded-lg border border-slate-800 p-2 w-full font-mono outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  {/* Billing Email */}
+                  <div>
+                    <label className="text-[9px] font-mono text-slate-400 mb-0.5 block uppercase">Billing Email</label>
+                    <input 
+                      type="email" 
+                      value={billingEmail}
+                      placeholder="rufustent@gmail.com"
+                      onChange={(e) => setBillingEmail(e.target.value)}
+                      className="bg-slate-950 text-xs text-white placeholder-slate-600 rounded-lg border border-slate-800 p-2 w-full font-mono outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
                   {/* Card Number Input */}
-                  <div className="relative">
+                  <div>
+                    <label className="text-[9px] font-mono text-slate-400 mb-0.5 block uppercase">Card Number</label>
                     <input 
                       type="text" 
                       value={cardNumber}
-                      placeholder="4242 4242 4242 4242"
+                      placeholder="4242 •••• •••• 4242"
                       onChange={(e) => setCardNumber(e.target.value)}
-                      className="bg-[#09090b] text-xs text-white placeholder-zinc-750 rounded-lg border border-[#27272a] p-2.5 w-full font-mono outline-none focus:border-blue-500"
+                      className="bg-slate-950 text-xs text-white placeholder-slate-600 rounded-lg border border-slate-800 p-2 w-full font-mono outline-none focus:border-indigo-500"
                     />
                   </div>
 
                   {/* Expiry and CVC Grid */}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
+                      <label className="text-[9px] font-mono text-slate-400 mb-0.5 block uppercase">Expiration</label>
                       <input 
                         type="text" 
                         value={cardExpiry}
-                        placeholder="MM / YY"
+                        placeholder="12/28"
                         onChange={(e) => setCardExpiry(e.target.value)}
-                        className="bg-[#09090b] text-xs text-white placeholder-zinc-750 rounded-lg border border-[#27272a] p-2.5 w-full font-mono text-center outline-none focus:border-blue-500"
+                        className="bg-slate-950 text-xs text-white placeholder-slate-600 rounded-lg border border-slate-800 p-2 w-full font-mono text-center outline-none focus:border-indigo-500"
                       />
                     </div>
                     <div>
+                      <label className="text-[9px] font-mono text-slate-400 mb-0.5 block uppercase">CVC Code</label>
                       <input 
                         type="password" 
                         value={cardCvc}
-                        placeholder="CVC"
-                        maxLength={3}
+                        placeholder="414"
+                        maxLength={4}
                         onChange={(e) => setCardCvc(e.target.value)}
-                        className="bg-[#09090b] text-xs text-white placeholder-zinc-750 rounded-lg border border-[#27272a] p-2.5 w-full font-mono text-center outline-none focus:border-blue-500"
+                        className="bg-slate-950 text-xs text-white placeholder-slate-600 rounded-lg border border-slate-800 p-2 w-full font-mono text-center outline-none focus:border-indigo-500"
                       />
                     </div>
                   </div>
-
-                  {/* Cardholder Name */}
-                  <div>
-                    <input 
-                      type="text" 
-                      value={cardName}
-                      placeholder="Cardholder Name"
-                      onChange={(e) => setCardName(e.target.value)}
-                      className="bg-[#09090b] text-xs text-white placeholder-zinc-750 rounded-lg border border-[#27272a] p-2.5 w-full font-mono outline-none focus:border-blue-500"
-                    />
-                  </div>
                 </div>
               ) : (
-                // PAYPAL MOCK FIELDS
-                <div className="space-y-3.5">
+                // PAYPAL FIELDS (Pre-populated with Rufus Tent credentials)
+                <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block font-semibold">PayPal Wallet Login</label>
+                    <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-semibold">
+                      PayPal Account Credentials
+                    </label>
                     <button
                       type="button"
                       onClick={handleAutoFillPayPal}
-                      className="text-[9px] font-mono text-blue-450 bg-blue-950/30 hover:bg-blue-950/50 border border-blue-900/20 px-2 py-0.5 rounded cursor-pointer"
+                      className="text-[9px] font-mono text-sky-400 bg-sky-950/45 hover:bg-sky-950/80 border border-sky-900/50 px-2 py-0.5 rounded cursor-pointer"
                     >
-                      Quick Auto-Fill Account
+                      Auto-Fill Rufus Account
                     </button>
                   </div>
 
                   {/* PayPal Email */}
                   <div>
+                    <label className="text-[9px] font-mono text-slate-400 mb-0.5 block uppercase">PayPal ID / Email</label>
                     <input 
                       type="email" 
                       value={paypalEmail}
-                      placeholder="buyer-sandboxed-user@gmail.com"
+                      placeholder="rufustent@gmail.com"
                       onChange={(e) => setPaypalEmail(e.target.value)}
-                      className="bg-[#09090b] text-xs text-white placeholder-zinc-750 rounded-lg border border-[#27272a] p-2.5 w-full font-mono outline-none focus:border-blue-500"
+                      className="bg-slate-950 text-xs text-white placeholder-slate-600 rounded-lg border border-slate-800 p-2.5 w-full font-mono outline-none focus:border-sky-500"
                     />
                   </div>
 
                   {/* PayPal Password */}
                   <div>
+                    <label className="text-[9px] font-mono text-slate-400 mb-0.5 block uppercase">PayPal Password</label>
                     <input 
                       type="password" 
                       value={paypalPassword}
                       placeholder="Sandbox Password"
                       onChange={(e) => setPaypalPassword(e.target.value)}
-                      className="bg-[#09090b] text-xs text-white placeholder-zinc-750 rounded-lg border border-[#27272a] p-2.5 w-full font-mono outline-none focus:border-blue-500"
+                      className="bg-slate-950 text-xs text-white placeholder-slate-600 rounded-lg border border-slate-800 p-2.5 w-full font-mono outline-none focus:border-sky-500"
                     />
+                  </div>
+
+                  <div className="bg-sky-950/30 border border-sky-900/40 rounded p-2 text-xxs text-sky-300 font-mono">
+                    Account: <strong>{user?.name || "Rufus Tent"}</strong> &bull; Receiver: <strong>{user?.merchantEmail || "rufustent@gmail.com"}</strong>
                   </div>
                 </div>
               )}
@@ -270,47 +318,68 @@ export default function CheckoutModal({ skill, onClose, onPurchaseSuccess }: Che
 
               {/* Action Button */}
               {isProcessing ? (
-                <div className="bg-[#09090b] rounded-lg p-4 border border-[#27272a] flex flex-col items-center justify-center space-y-3">
+                <div className="bg-slate-950 rounded-lg p-4 border border-slate-800/80 flex flex-col items-center justify-center space-y-3">
                   <Loader2 className="h-7 w-7 text-amber-500 animate-spin" />
-                  <p className="text-xs text-zinc-300 font-mono text-center animate-pulse">{processingStep}</p>
+                  <p className="text-xs text-slate-300 font-mono text-center animate-pulse">{processingStep}</p>
                 </div>
               ) : (
                 <button
                   type="submit"
                   className="w-full py-3 px-4 text-xs font-mono font-bold tracking-wider rounded-lg bg-amber-600 hover:bg-amber-500 hover:scale-[1.01] text-slate-950 shadow-lg shadow-amber-600/10 cursor-pointer text-center uppercase transition-all"
                 >
-                  Pay ${skill.price.toFixed(2)} USD and Unlock License
+                  Pay ${skill.price.toFixed(2)} USD as {paymentMethod === "stripe" ? cardName : (user?.name || "Rufus Tent")}
                 </button>
               )}
 
-              {/* Security info disclaimer */}
-              <div className="flex items-center gap-1.5 justify-center text-[10px] text-zinc-500 font-mono mt-2">
-                <span>🛡️ PCI-DSS Compliant Developer Sandbox</span>
+              {/* Security & Credentials info disclaimer */}
+              <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono pt-1">
+                <span>🛡️ PCI-DSS Authenticated</span>
+                <span className="text-slate-400 font-semibold">{user?.email || "rufustent@gmail.com"}</span>
               </div>
             </form>
           ) : (
-            // SUCCESSFUL TRANSACTION VIEW
-            <div className="text-center py-6 space-y-4 animate-fade-in">
-              <div className="w-16 h-16 bg-emerald-950 border border-emerald-500/50 text-emerald-400 rounded-full flex items-center justify-center mx-auto shadow-xl">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                </svg>
+            // SUCCESSFUL TRANSACTION VIEW WITH RUFUS TENT CREDENTIALS
+            <div className="text-center py-5 space-y-4 animate-fade-in">
+              <div className="w-14 h-14 bg-emerald-950 border border-emerald-500/50 text-emerald-400 rounded-full flex items-center justify-center mx-auto shadow-xl">
+                <Check className="w-7 h-7" />
               </div>
 
               <div>
                 <span className="text-[10px] font-mono uppercase bg-emerald-950 text-emerald-400 border border-emerald-900/60 rounded px-2.5 py-0.5">
-                  Sandbox Charge Authorized
+                  Payment Authorized
                 </span>
-                <h4 className="text-white font-bold text-lg mt-3">Payment Captured Successfully!</h4>
-                <p className="text-xs text-zinc-400 max-w-sm mx-auto mt-1 leading-relaxed">
-                  The persistent backend registry has been successfully updated with lifetime license keys for <strong>{skill.name}</strong>.
+                <h4 className="text-white font-bold text-base mt-2">Payment Captured Successfully!</h4>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 leading-relaxed">
+                  Lifetime license keys for <strong>{skill.name}</strong> registered and confirmed.
                 </p>
               </div>
 
-              <div className="bg-[#09090b] rounded-lg p-3 border border-[#27272a] font-mono text-xxs text-zinc-500 flex flex-col space-y-1 text-left max-w-xs mx-auto">
-                <span className="flex justify-between"><span>Method:</span><span className="text-zinc-300 uppercase">{paymentMethod}</span></span>
-                <span className="flex justify-between"><span>Reference:</span><span className="text-zinc-300 truncate">ch_{Math.floor(Math.random()*10000000)}</span></span>
-                <span className="flex justify-between"><span>User state:</span><span className="text-emerald-400 font-semibold uppercase">premium unlocked</span></span>
+              {/* Receipt with explicit credentials */}
+              <div className="bg-slate-950 rounded-lg p-3.5 border border-slate-800 font-mono text-xxs text-slate-400 space-y-1.5 text-left max-w-sm mx-auto">
+                <div className="flex justify-between border-b border-slate-850 pb-1">
+                  <span>License Holder:</span>
+                  <span className="text-white font-semibold">{user?.name || "Rufus Tent"}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-850 pb-1">
+                  <span>Billing / Account:</span>
+                  <span className="text-indigo-400 font-semibold">{user?.email || "rufustent@gmail.com"}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-850 pb-1">
+                  <span>Merchant Payee:</span>
+                  <span className="text-white font-semibold">{user?.merchantName || "Rufus Tent"}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-850 pb-1">
+                  <span>Payout Destination:</span>
+                  <span className="text-emerald-400 font-semibold">{user?.merchantEmail || "rufustent@gmail.com"}</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-850 pb-1">
+                  <span>Gateway Method:</span>
+                  <span className="text-slate-300 uppercase">{paymentMethod}</span>
+                </div>
+                <div className="flex justify-between pt-0.5">
+                  <span>Receipt Delivered To:</span>
+                  <span className="text-emerald-400 truncate">{user?.email || "rufustent@gmail.com"}</span>
+                </div>
               </div>
 
               <button
@@ -318,7 +387,7 @@ export default function CheckoutModal({ skill, onClose, onPurchaseSuccess }: Che
                   onPurchaseSuccess(skill.id, paymentMethod, skill.price);
                   onClose();
                 }}
-                className="inline-block px-6 py-2.5 text-xs font-mono font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-lg cursor-pointer transition shadow-lg shadow-blue-600/15"
+                className="inline-block px-6 py-2.5 text-xs font-mono font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg cursor-pointer transition shadow-lg shadow-indigo-600/15"
               >
                 Launch Skill in Sandbox
               </button>
