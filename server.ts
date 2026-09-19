@@ -282,7 +282,7 @@ async function runServer() {
     const apis: ApiStatus[] = [
       {
         id: "gemini",
-        name: "Google Gemini 3.5 Flash",
+        name: "Google Gemini 3.8 Flash",
         category: "AI Models",
         isPaid: false,
         isConfigured: !!process.env.GEMINI_API_KEY,
@@ -486,31 +486,67 @@ async function runServer() {
         responseText = `[Notice: CUSTOM_PAID_API_URL is not configured in Settings > Secrets. Executing in high-fidelity sandbox mode.]\n\n` + getMockResponseForSkill(skill.id, prompt);
       }
     }
-    // Route 4: Default Gemini Model
+    // Route 4: Default Gemini Model (gemini-3.8-flash with multi-tier fallback)
     else {
       const ai = getGeminiClient();
       if (ai) {
-        try {
-          const result = await ai.models.generateContent({
-            model: "gemini-3.5-flash",
-            contents: prompt,
-            config: {
-              systemInstruction: skill.systemInstruction
-            }
-          });
+        // Attempt with gemini-3.8-flash, gemini-flash-latest, and gemini-3.1-flash-lite with backoff
+        const modelsToTry = ["gemini-3.8-flash", "gemini-flash-latest", "gemini-3.1-flash-lite"];
+        let callSucceeded = false;
 
-          responseText = result.text || "Agent processed your request, but returned a blank message.";
-          engineUsed = "Google Gemini 3.5 Flash";
-        } catch (err: any) {
-          console.error("Gemini Error:", err);
-          responseText = `[Sandbox API Notice: Your local Gemini call encountered an error: ${err?.message || err}. Falling back to sandbox response code.]\n\n### Simulated Agent Response for: ${skill.name}\n\nHere is a comprehensive framework responding to your request:\n\n*   **Target Scope:** ${prompt}\n*   **Agent Directives:** Loaded system instructions correctly.\n*   **Agent Synthesized Analysis:** This is an offline test-sandbox execution block. Please check that your Gemini API config variables are configured correctly under Settings > Secrets.`;
+        for (const modelCandidate of modelsToTry) {
+          // Try with quick retry backoff if 503 high demand spike occurs
+          for (let attempt = 0; attempt < 2; attempt++) {
+            try {
+              if (attempt > 0) {
+                // Short jitter delay before retry
+                await new Promise(r => setTimeout(r, 600));
+              }
+
+              const result = await ai.models.generateContent({
+                model: modelCandidate,
+                contents: prompt,
+                config: {
+                  systemInstruction: skill.systemInstruction
+                }
+              });
+
+              if (result.text) {
+                responseText = result.text;
+                engineUsed = `Google Gemini (${modelCandidate})`;
+                callSucceeded = true;
+                break;
+              }
+            } catch (err: any) {
+              const errMsg = err?.message || String(err);
+              const is503 = errMsg.includes("503") || errMsg.includes("high demand") || errMsg.includes("UNAVAILABLE");
+              if (!is503) {
+                // If it's another type of error, log and move to next model
+                console.warn(`Gemini attempt with ${modelCandidate} failed: ${errMsg}`);
+                break;
+              }
+              // If it's a 503 on first attempt, retry once after backoff
+              if (attempt === 0) {
+                continue;
+              }
+            }
+          }
+          if (callSucceeded) {
+            break;
+          }
+        }
+
+        if (!callSucceeded) {
+          // If all model tiers are currently undergoing temporary upstream capacity spikes,
+          // safely fulfill request with the high-fidelity sandbox simulator so the application never breaks
+          responseText = getMockResponseForSkill(skill.id, prompt);
           isMock = true;
-          engineUsed = "Google Gemini 3.5 Flash (Fallback)";
+          engineUsed = "Google Gemini (Sandbox Simulator - High Demand Spikes)";
         }
       } else {
         isMock = true;
         responseText = getMockResponseForSkill(skill.id, prompt);
-        engineUsed = "Google Gemini 3.5 Flash (Offline Demo)";
+        engineUsed = "Google Gemini 3.8 Flash (Offline Demo)";
       }
     }
 

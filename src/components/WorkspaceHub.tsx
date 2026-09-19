@@ -91,7 +91,7 @@ export default function WorkspaceHub({
     setElapsedMs(0);
 
     const engineNames = {
-      gemini: "Gemini 3.5 Flash",
+      gemini: "Gemini 3.8 Flash",
       openai: "OpenAI GPT-4o",
       anthropic: "Claude 3.5 Sonnet",
       custom_paid: "Custom Paid API"
@@ -302,7 +302,7 @@ export default function WorkspaceHub({
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold block">Gemini 3.5</span>
+                    <span className="text-xs font-bold block">Gemini 3.8</span>
                     <span className="text-[9px] text-emerald-400 font-bold">Standard</span>
                   </div>
                   <span className="text-[10px] text-slate-500 block mt-0.5">Google GenAI</span>
