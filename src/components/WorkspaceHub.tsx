@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { AgentSkill, UserSession, ExecutionRecord } from "../types";
 import { SkillIcon } from "./AgentStore";
-import { Play, Lock, Unlock, Clock, Sparkles, Terminal, Copy, Check, FileText, Cpu, AlertCircle } from "lucide-react";
+import { Play, Lock, Unlock, Clock, Sparkles, Terminal, Copy, Check, FileText, Cpu, AlertCircle, Code2 } from "lucide-react";
 
 interface WorkspaceHubProps {
   skills: AgentSkill[];
@@ -31,6 +31,8 @@ export default function WorkspaceHub({
   const [runError, setRunError] = useState("");
   const [offlineNotice, setOfflineNotice] = useState(false);
   const [selectedEngine, setSelectedEngine] = useState<"gemini" | "openai" | "anthropic" | "custom_paid">("gemini");
+  const [showInteractionsSnippet, setShowInteractionsSnippet] = useState(false);
+  const [snippetLang, setSnippetLang] = useState<"python" | "typescript">("python");
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const selectedSkill = skills.find(s => s.id === selectedSkillId) || skills[0];
@@ -303,9 +305,9 @@ export default function WorkspaceHub({
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold block">Gemini 3.8</span>
-                    <span className="text-[9px] text-emerald-400 font-bold">Standard</span>
+                    <span className="text-[9px] text-emerald-400 font-bold">Interactions API</span>
                   </div>
-                  <span className="text-[10px] text-slate-500 block mt-0.5">Google GenAI</span>
+                  <span className="text-[10px] text-slate-500 block mt-0.5">client.interactions</span>
                 </button>
 
                 <button
@@ -360,15 +362,29 @@ export default function WorkspaceHub({
 
             {/* Prompt input field text area */}
             <div className="space-y-2">
-              <div className="flex justify-between items-center text-xxs font-mono">
+              <div className="flex flex-wrap justify-between items-center gap-2 text-xxs font-mono">
                 <label className="text-slate-400 font-bold uppercase tracking-wider block">Agent Playground Input</label>
-                <button
-                  type="button"
-                  onClick={handleQuickFill}
-                  className="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer"
-                >
-                  Load Template Query
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPromptInput("Explain how AI works in a few words");
+                      setSelectedEngine("gemini");
+                      setRunError("");
+                    }}
+                    className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-medium px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/60 cursor-pointer"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    <span>Explain AI (Interactions API Preset)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleQuickFill}
+                    className="text-indigo-400 hover:text-indigo-300 font-medium cursor-pointer"
+                  >
+                    Load Skill Template
+                  </button>
+                </div>
               </div>
 
               <textarea
@@ -379,6 +395,72 @@ export default function WorkspaceHub({
                 className="w-full text-xs bg-slate-950 text-white placeholder-slate-700 p-3 rounded-lg border border-slate-800 outline-none focus:border-indigo-500 font-mono"
                 disabled={isRunning}
               />
+
+              {/* Toggleable Interactions API Code Reference */}
+              <div className="border border-slate-800/80 rounded-lg overflow-hidden bg-slate-950/80">
+                <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900/60 border-b border-slate-800/80">
+                  <button
+                    type="button"
+                    onClick={() => setShowInteractionsSnippet(!showInteractionsSnippet)}
+                    className="flex items-center gap-1.5 text-[11px] font-mono text-slate-300 hover:text-white cursor-pointer"
+                  >
+                    <Code2 className="h-3.5 w-3.5 text-indigo-400" />
+                    <span className="font-semibold">Gemini Interactions API Implementation</span>
+                    <span className="text-[10px] text-slate-500">({showInteractionsSnippet ? "Hide" : "Show Code"})</span>
+                  </button>
+
+                  {showInteractionsSnippet && (
+                    <div className="flex items-center gap-1 font-mono text-[10px]">
+                      <button
+                        type="button"
+                        onClick={() => setSnippetLang("python")}
+                        className={`px-2 py-0.5 rounded ${snippetLang === "python" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"}`}
+                      >
+                        Python
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSnippetLang("typescript")}
+                        className={`px-2 py-0.5 rounded ${snippetLang === "typescript" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"}`}
+                      >
+                        TypeScript
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {showInteractionsSnippet && (
+                  <div className="p-3 text-[11px] font-mono text-slate-300 bg-slate-950 overflow-x-auto">
+                    {snippetLang === "python" ? (
+                      <pre className="text-emerald-300 whitespace-pre">
+{`from google import genai
+
+client = genai.Client()
+
+interaction = client.interactions.create(
+    model="gemini-3.8-flash",
+    input="${promptInput || "Explain how AI works in a few words"}"
+)
+
+print(interaction.output_text)`}
+                      </pre>
+                    ) : (
+                      <pre className="text-indigo-300 whitespace-pre">
+{`import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI();
+
+const interaction = await ai.interactions.create({
+  model: "gemini-3.8-flash",
+  input: "${promptInput || "Explain how AI works in a few words"}"
+});
+
+console.log(interaction.output_text);`}
+                      </pre>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Error messaging inside sandbox */}

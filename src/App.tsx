@@ -11,6 +11,7 @@ import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import CheckoutModal from "./components/CheckoutModal";
 import CredentialsModal from "./components/CredentialsModal";
 import ApiIntegrationsModal from "./components/ApiIntegrationsModal";
+import GoogleWorkspaceDashboard from "./components/GoogleWorkspaceDashboard";
 import { 
   ShoppingBag, 
   PlayCircle, 
@@ -26,7 +27,8 @@ import {
   Key,
   CreditCard,
   UserCheck,
-  Server
+  Server,
+  FolderSync
 } from "lucide-react";
 
 // Client-side definitions of Agent skills for rapid UI hydration
@@ -101,7 +103,7 @@ const SKILLS: AgentSkill[] = [
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<"store" | "workspace" | "analytics">("store");
+  const [activeTab, setActiveTab] = useState<"store" | "workspace" | "analytics" | "google-workspace">("store");
   const [user, setUser] = useState<UserSession | null>(null);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [selectedSkillId, setSelectedSkillId] = useState("financial-forecaster");
@@ -343,6 +345,22 @@ export default function App() {
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
             )}
           </button>
+
+          {/* TAB: GOOGLE WORKSPACE SUITE */}
+          <button
+            onClick={() => setActiveTab("google-workspace")}
+            className={`flex items-center gap-2 px-5 py-3 hover:text-slate-100 transition-all font-medium border-b-2 cursor-pointer ${
+              activeTab === "google-workspace"
+                ? "border-indigo-500 text-white bg-indigo-950/20"
+                : "border-transparent text-slate-400"
+            }`}
+          >
+            <FolderSync className="h-4 w-4 text-indigo-400" />
+            Google Workspace
+            <span className="px-1.5 py-0.2 rounded bg-indigo-900/60 text-indigo-300 text-[10px]">
+              Drive &bull; Gmail &bull; Contacts
+            </span>
+          </button>
         </div>
 
         {/* WORKSPACE VIEW DISPLAY GATES */}
@@ -384,6 +402,10 @@ export default function App() {
               isResetting={isResetting}
               onOpenCredentials={() => setShowCredentialsModal(true)}
             />
+          )}
+
+          {activeTab === "google-workspace" && (
+            <GoogleWorkspaceDashboard />
           )}
         </main>
 

@@ -1,0 +1,62 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with role, credits, and purchased skills",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["creator", "buyer", "admin"] },
+        "credits": { "type": "number" },
+        "purchasedSkills": { "type": "array" }
+      },
+      "required": ["id", "username", "email", "role"]
+    },
+    "Skill": {
+      "title": "Skill",
+      "description": "Agent skill registered in the marketplace",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "tier": { "type": "string", "enum": ["free", "premium", "enterprise"] },
+        "category": { "type": "string" }
+      },
+      "required": ["id", "name", "price", "tier"]
+    },
+    "Execution": {
+      "title": "Execution",
+      "description": "Telemetry record of an agent skill execution",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "skillId": { "type": "string" },
+        "skillName": { "type": "string" },
+        "engineUsed": { "type": "string" },
+        "prompt": { "type": "string" },
+        "response": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["id", "username", "skillId", "prompt", "response", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User account documents stored by unique user ID"
+    },
+    "/skills/{skillId}": {
+      "schema": "Skill",
+      "description": "Global catalog of marketplace skills"
+    },
+    "/executions/{executionId}": {
+      "schema": "Execution",
+      "description": "Public or shared execution telemetry logs"
+    }
+  }
+}

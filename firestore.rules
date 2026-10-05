@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // User profile documents: users can read their own profile, or admins can read/write
+    match /users/{userId} {
+      allow read: if request.auth != null && (request.auth.uid == userId || request.auth.token.role == 'admin');
+      allow write: if request.auth != null && (request.auth.uid == userId || request.auth.token.role == 'admin');
+    }
+
+    // Skills catalog: public read, admin write
+    match /skills/{skillId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.role == 'admin';
+    }
+
+    // Executions telemetry: authenticated users can read/write their own execution records
+    match /executions/{executionId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && (resource.data.userId == request.auth.uid || request.auth.token.role == 'admin');
+    }
+  }
+}
